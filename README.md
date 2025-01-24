@@ -5,7 +5,7 @@ Built a real-time financial news sentiment analysis platform that helps investor
 🛠 Tech Stack:
 - Frontend: React, TailwindCSS, Framer Motion
 - Backend: FastAPI, Python
-- Database: MongoDB Atlas
+- Database: MongoDB 
 - AI: TextBlob for sentiment analysis
 - APIs: News API integration
 
