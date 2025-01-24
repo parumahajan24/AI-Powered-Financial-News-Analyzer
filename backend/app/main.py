@@ -5,6 +5,8 @@ from app.services.news_service import NewsService
 import os
 import logging
 from motor.motor_asyncio import AsyncIOMotorClient
+from app.services.sentiment_service import SentimentAnalyzer
+from app.services.news_service import NewsService
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -12,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Powered Financial News Analyzer")
 news_service = NewsService()
+sentiment_analyzer = SentimentAnalyzer()
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +44,24 @@ async def get_company_news(company_symbol: str, days: int = 7):
             save_result = await news_service.save_news_to_db(app.mongodb, company_symbol, articles)
             logger.info(f"Save to DB result: {save_result}")
             return {"status": "success", "data": articles}
+        raise HTTPException(status_code=404, detail="No news found")
+    except Exception as e:
+        logger.error(f"Error in get_company_news: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+        
+@app.get("/api/news/{company_symbol}")
+async def get_company_news(company_symbol: str, days: int = 7):
+    try:
+        articles = await news_service.fetch_company_news(company_symbol, days)
+        if articles:
+            sentiment_results = await sentiment_analyzer.analyze_news(articles)
+            save_result = await news_service.save_news_to_db(app.mongodb, company_symbol, articles)
+            logger.info(f"Save to DB result: {save_result}")
+            return {
+                "status": "success",
+                "data": articles,
+                "sentiment": sentiment_results
+            }
         raise HTTPException(status_code=404, detail="No news found")
     except Exception as e:
         logger.error(f"Error in get_company_news: {e}")
