@@ -35,19 +35,6 @@ async def startup_db_client():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
-
-@app.get("/api/news/{company_symbol}")
-async def get_company_news(company_symbol: str, days: int = 7):
-    try:
-        articles = await news_service.fetch_company_news(company_symbol, days)
-        if articles:
-            save_result = await news_service.save_news_to_db(app.mongodb, company_symbol, articles)
-            logger.info(f"Save to DB result: {save_result}")
-            return {"status": "success", "data": articles}
-        raise HTTPException(status_code=404, detail="No news found")
-    except Exception as e:
-        logger.error(f"Error in get_company_news: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
         
 @app.get("/api/news/{company_symbol}")
 async def get_company_news(company_symbol: str, days: int = 7):
@@ -56,7 +43,8 @@ async def get_company_news(company_symbol: str, days: int = 7):
         if articles:
             sentiment_results = await sentiment_analyzer.analyze_news(articles)
             save_result = await news_service.save_news_to_db(app.mongodb, company_symbol, articles)
-            logger.info(f"Save to DB result: {save_result}")
+            await sentiment_analyzer.save_sentiment_to_db(app.mongodb, company_symbol, sentiment_results)
+            #logger.info(f"Save to DB result: {save_result}")
             return {
                 "status": "success",
                 "data": articles,

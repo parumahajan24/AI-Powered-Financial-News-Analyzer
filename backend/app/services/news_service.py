@@ -36,19 +36,17 @@ class NewsService:
     async def save_news_to_db(self, db, company_symbol, articles):
         try:
             if articles:
-                await db.raw_news.insert_many([
-                    {
-                        'company': company_symbol,
-                        'title': article.get('title'),
-                        'description': article.get('description'),
-                        'content': article.get('content'),
-                        'published_at': article.get('publishedAt'),
-                        'source': article.get('source', {}).get('name'),
-                        'url': article.get('url'),
-                        'collected_at': datetime.utcnow()
-                    }
-                    for article in articles
-                ])
+                documents = [{
+                    'company': company_symbol,
+                    'title': article.get('title'),
+                    'description': article.get('description'),
+                    'content': article.get('content'),
+                    'published_at': article.get('publishedAt'),
+                    'source': article.get('source', {}).get('name'),
+                    'url': article.get('url'),
+                    'collected_at': datetime.utcnow()
+                } for article in articles]
+                await db.raw_news.insert_many(documents)
             return True
         except Exception as e:
             print(f"Error saving to database: {str(e)}")
